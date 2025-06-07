@@ -5,16 +5,14 @@ import re
 from dotenv import load_dotenv
 load_dotenv()
 
-# --- CONFIGURAÇÕES ---
-# ⚠️ COLE A SUA CHAVE DA API DO OCR.SPACE AQUI
-OCR_API_KEY = os.getenv("OCR_API_KEY")  # Sua chave já está aqui
+# COLE A SUA CHAVE DA API DO OCR.SPACE AQUI
+OCR_API_KEY = os.getenv("OCR_API_KEY") 
 OCR_API_URL = "https://api.ocr.space/parse/image"
 
 DIRETORIO_IMAGENS = 'imagens_chaves'
 
 REGEX_PADRAO_CHAVE_COMPLETA = r'([A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5})'
 
-# --- FUNÇÕES PRINCIPAIS ---
 
 def extrair_texto_com_api(caminho_imagem: str) -> str | None:
     
