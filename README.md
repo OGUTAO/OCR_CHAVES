@@ -6,6 +6,7 @@ pip install google-generativeai
 pip install Pillow
 
 Rodar:
+cd C:\OCR_CHAVES (se estiver no disco local)
 python extrair_chaves.py
 
 Criar App:
@@ -15,7 +16,6 @@ Criar App Sem Bibliotecas:
 "Criar (Novo) no path"
 where python
 python -m pip install --upgrade pyinstaller customtkinter pandas openpyxl python-dotenv requests
-pip install opencv-python numpy
 pyinstaller --name="SysKey" --windowed --icon="icone.ico" extrair_chaves.py
 
 PATH para criar:

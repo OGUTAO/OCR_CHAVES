@@ -110,7 +110,7 @@ class App(ctk.CTk):
         self.progressbar = ctk.CTkProgressBar(self.frame_status_progresso, orientation="horizontal")
         self.frame_salvar = ctk.CTkFrame(self); self.frame_salvar.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
         self.botao_adicionar_excel = ctk.CTkButton(self.frame_salvar, text="Adicionar ao Excel", fg_color="sea green", hover_color="dark green", command=self.adicionar_ao_excel); self.botao_adicionar_excel.pack(side="left", padx=5, pady=5)
-        self.botao_substituir_excel = ctk.CTkButton(self.frame_salvar, text="Substituir e Abrir Excel", command=self.substituir_em_excel); self.botao_substituir_excel.pack(side="left", padx=5, pady=5)
+        self.botao_substituir_excel = ctk.CTkButton(self.frame_salvar, text="Substituir a Planilha Excel", command=self.substituir_em_excel); self.botao_substituir_excel.pack(side="left", padx=5, pady=5)
         
     def _bloquear_botoes(self, processando=True):
         estado = "disabled" if processando else "normal"
