@@ -2,6 +2,8 @@
 Bibliotecas:
 python -m pip install --upgrade pyinstaller customtkinter pandas openpyxl python-dotenv requests
 pip install opencv-python numpy
+pip install google-generativeai
+pip install Pillow
 
 Rodar:
 python extrair_chaves.py
