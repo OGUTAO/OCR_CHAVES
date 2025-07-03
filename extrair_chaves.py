@@ -1,5 +1,5 @@
 import os
-import sys  # Importação necessária para encontrar o ícone
+import sys  
 import pandas as pd
 import re
 from dotenv import load_dotenv
