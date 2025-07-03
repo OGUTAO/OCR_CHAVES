@@ -1,0 +1,119 @@
+# SysKey - Painel de Extração de Chaves de Produto
+
+SysKey é um aplicativo de desktop desenvolvido em Python com a biblioteca CustomTkinter. Ele utiliza a API Gemini do Google para extrair chaves de produto do Windows a partir de imagens (OCR), oferecendo uma interface gráfica para gerenciar, validar e salvar essas chaves em uma planilha Excel.
+
+![Imagem da Interface do SysKey](https://i.imgur.com/gK2R1vG.png)
+
+---
+
+## Funcionalidades
+
+- **Extração por OCR:** Usa a IA Generativa do Google (Gemini) para ler chaves de produto de arquivos de imagem (`.jpg`, `.png`, etc.).
+- **Carregamento em Massa:** Processa múltiplos arquivos de imagem de uma só vez ao selecionar uma pasta.
+- **Painel de Gerenciamento Interativo:**
+    - **Edição Manual:** Permite corrigir ou adicionar chaves diretamente na interface.
+    - **Reordenação:** Altere a ordem das chaves com botões de "Subir" (↑) e "Descer" (↓).
+    - **Exclusão:** Remova chaves individuais com um clique.
+- **Validação em Tempo Real:**
+    - Verifica se cada chave segue o formato padrão do Windows (`XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`).
+    - O status de cada chave (`✅ Padrão Correto` ou `⚠️ Verificar Formato`) é atualizado instantaneamente enquanto você digita.
+- **Relatório Dinâmico:** Um painel de relatório na parte inferior lista todas as chaves com formato inválido, indicando o número da linha para fácil localização.
+- **Exportação para Excel:**
+    - **Substituir:** Cria uma nova planilha Excel com as chaves do painel.
+    - **Adicionar:** Adiciona as chaves do painel a uma planilha existente, evitando duplicatas.
+    - O arquivo Excel é salvo sem cabeçalho para facilitar a contagem de chaves.
+- **Interface Moderna:** Desenvolvida com CustomTkinter para um visual limpo e agradável.
+
+---
+
+##  Como Usar o Aplicativo
+
+1.  **Carregar Chaves:**
+    - Clique em **"Carregar Arquivo"** para selecionar uma única imagem.
+    - Clique em **"Carregar Pasta"** para processar todas as imagens de uma pasta.
+2.  **Gerenciar Chaves no Painel:**
+    - As chaves extraídas aparecerão na lista.
+    - **Corrija** qualquer chave diretamente no campo de texto. As letras serão convertidas para maiúsculas automaticamente.
+    - **Reordene** as chaves usando os botões ↑ e ↓.
+    - **Exclua** chaves desnecessárias clicando em "Excluir".
+    - **Adicione** uma nova linha clicando em "Adicionar Chave Manualmente".
+3.  **Verificar o Relatório:**
+    - O painel "Relatório de Validação" na parte inferior informará se há chaves com formato inválido e em qual linha elas estão.
+    - O status ao lado de cada chave também indica sua validade.
+4.  **Salvar em Excel:**
+    - Após revisar e validar todas as chaves, clique em **"Adicionar ao Excel"** ou **"Substituir a Planilha"**.
+    - O arquivo `chaves_extraidas_final.xlsx` será salvo na mesma pasta do aplicativo e aberto automaticamente.
+
+---
+
+##  Configuração do Ambiente (Para Desenvolvedores)
+
+Para executar o projeto a partir do código-fonte, siga estes passos:
+
+1.  **Clone o Repositório:**
+    ```bash
+    git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+    cd seu-repositorio
+    ```
+
+2.  **Crie um Arquivo de Ambiente (`.env`):**
+    - Na raiz do projeto, crie um arquivo chamado `.env`.
+    - Dentro deste arquivo, adicione sua chave da API Gemini:
+      ```
+      GEMINI_API_KEY="SUA_CHAVE_API_AQUI"
+      ```
+
+3.  **Instale as Dependências:**
+    - É recomendado usar um ambiente virtual (`venv`).
+    - Instale todas as bibliotecas necessárias com o pip:
+      ```bash
+      pip install pandas customtkinter Pillow python-dotenv google-generativeai
+      ```
+
+4.  **Execute o Script:**
+    ```bash
+    python seu_script.py
+    ```
+
+---
+
+##  Estrutura do Código
+
+O código é organizado em uma única classe principal (`App`) e algumas funções auxiliares.
+
+### Funções Auxiliares
+
+-   `resource_path(relative_path)`: Função essencial para que o PyInstaller encontre arquivos (como o ícone `.ico`) quando o aplicativo é compilado em um executável.
+-   `validar_formato_chave(chave)`: Usa uma expressão regular (regex) para verificar se uma string corresponde ao formato `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`. Retorna `True` ou `False`.
+-   `extrair_chaves_da_imagem(caminho_imagem)`: O "motor" do OCR. Envia a imagem e um prompt específico para a API Gemini e processa a resposta de texto para extrair as chaves.
+
+### Classe Principal `App(ctk.CTk)`
+
+Esta classe gerencia toda a interface gráfica e o estado do aplicativo.
+
+#### `__init__(self)`
+-   Configura a janela principal (título, tamanho, tema).
+-   Define as fontes usadas na UI.
+-   Inicializa as variáveis de estado: `self.resultados_atuais` (a lista de dados) e `self.widgets_linhas` (a lista de componentes da UI).
+-   Constrói todos os frames e widgets (botões, caixas de texto, etc.) e os organiza na tela usando o sistema de `grid` e `pack`.
+
+#### Métodos de Extração
+-   `iniciar_extracao_base(...)`: Uma função genérica que prepara a UI para o processamento (mostra a barra de progresso, bloqueia botões) e inicia a extração em uma `thread` separada para não travar a interface.
+-   `_processar_arquivo_em_background(...)` e `_processar_pasta_em_background(...)`: Funções que rodam na `thread`. Elas chamam a função de OCR e, ao final, agendam a atualização da interface na thread principal usando `self.after(...)`.
+
+#### Métodos de Atualização da UI
+-   `_sincronizar_painel_com_dados()`: **Método crucial.** Lê os valores atuais de todos os campos de texto da interface e salva essas informações na lista de dados `self.resultados_atuais`.
+-   `_redesenhar_painel_completo()`: Destrói todos os widgets de linha existentes e os recria do zero com base na lista de dados atual. É chamado sempre que a lista é modificada (adicionada, excluída, reordenada).
+-   `_atualizar_relatorio_validacao()`: Atualiza o painel de relatório na parte inferior, listando todas as chaves com formato inválido e o número da linha correspondente.
+-   `_desenhar_linha_chave(...)`: Cria todos os widgets para uma única linha de chave (número, nome da imagem, campo de texto, status de validação e botões de ação).
+    -   **Validação Dinâmica:** A mágica acontece aqui, onde a `StringVar` do campo de texto tem um "trace". Qualquer alteração no texto dispara a função `on_key_change`, que atualiza o status da linha e o painel de relatório em tempo real.
+
+#### Métodos de Ação do Usuário
+-   `handle_adicionar_manual()`: Sincroniza, adiciona uma nova linha em branco aos dados e redesenha o painel.
+-   `mover_linha(...)`: Sincroniza, troca a posição de dois itens na lista de dados e redesenha o painel.
+-   `excluir_linha_chave(...)`: Sincroniza, remove um item da lista de dados e redesenha o painel.
+-   `limpar_tudo()`: Limpa a lista de dados e redesenha o painel.
+
+#### Métodos de Salvamento
+-   `_coletar_dados_do_painel()`: Sincroniza os dados uma última vez e realiza a validação final. Se encontrar uma chave inválida, exibe um erro e impede o salvamento. Se tudo estiver correto, retorna um DataFrame do Pandas.
+-   `substituir_em_excel()` e `adicionar_ao_excel()`: Coletam os dados validados e usam o Pandas para salvá-los no arquivo `.xlsx`, com a opção `header=False` para omitir a linha de cabeçalho.

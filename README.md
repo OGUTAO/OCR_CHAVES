@@ -6,7 +6,8 @@ pip install google-generativeai
 pip install Pillow
 
 Rodar:
-cd C:\OCR_CHAVES (se estiver no disco local)
+cd OneDrive\"PastaDoPrograma"\OCR_CHAVES (Se estiver no OneDrive)
+cd C:\OCR_CHAVES (Se estiver no disco local)
 python extrair_chaves.py
 
 Criar App:
