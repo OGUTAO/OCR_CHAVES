@@ -1,13 +1,12 @@
 import os
-import sys  
+import sys
 import pandas as pd
-import re
-from dotenv import load_dotenv
-import google.generativeai as genai
-from PIL import Image
 import threading
 import customtkinter as ctk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, StringVar
+from PIL import Image
+from dotenv import load_dotenv
+import google.generativeai as genai
 
 # --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
 load_dotenv()
@@ -15,15 +14,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NOME_ARQUIVO_EXCEL = 'chaves_extraidas_final.xlsx'
 
 
-# --- NOVA FUNÇÃO AUXILIAR PARA ENCONTRAR ARQUIVOS NO APP ---
+# --- FUNÇÃO AUXILIAR PARA ENCONTRAR ARQUIVOS NO APP (PyInstaller) ---
 def resource_path(relative_path):
     """ Retorna o caminho absoluto para o recurso, funciona para desenvolvimento e para o executável do PyInstaller """
     try:
-        # PyInstaller cria uma pasta temporária e armazena o caminho em sys._MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
-
     return os.path.join(base_path, relative_path)
 
 
@@ -45,12 +42,6 @@ def extrair_e_analisar_imagem(caminho_imagem: str) -> list:
         Para cada chave de produto encontrada, forneça DUAS informações em linhas separadas e consecutivas:
         1.  Uma linha começando com "CHAVE: " seguida da chave no formato XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.
         2.  Uma linha começando com "VERIFICACAO: " contendo os caracteres que você considera mais difíceis de ler ou ambíguos nesta chave (ex: O, 0, B, 8, S, 5). Se a leitura for 100% clara para você, escreva "Nenhum".
-
-        Exemplo de uma saída correta para uma imagem com duas chaves:
-        CHAVE: GR79F-V4NGQ-RBGQK-X4RVV-PWF9C
-        VERIFICACAO: G, B, Q
-        CHAVE: NCKM6-93VT7-D64WF-2X9VK-MG9TT
-        VERIFICACAO: Nenhum
         """
         
         response = model.generate_content([prompt, img])
@@ -58,13 +49,12 @@ def extrair_e_analisar_imagem(caminho_imagem: str) -> list:
 
         if not response.text: return []
         
-        # Faz o parsing da resposta estruturada
         resultados = []
         linhas = response.text.strip().split('\n')
         for i, linha in enumerate(linhas):
             if linha.upper().startswith("CHAVE:"):
-                chave = linha[len("CHAVE:"):].strip()
-                verificacao = "Não informado" # Padrão
+                chave = linha[len("CHAVE:"):].strip().upper() # Garante que a chave da IA já venha maiúscula
+                verificacao = "Não informado"
                 if i + 1 < len(linhas) and linhas[i+1].upper().startswith("VERIFICACAO:"):
                     verificacao = linhas[i+1][len("VERIFICACAO:"):].strip()
                 
@@ -85,22 +75,23 @@ class App(ctk.CTk):
         self.geometry("1000x750")
         ctk.set_appearance_mode("dark")
         
-        # --- LINHA ADICIONADA PARA DEFINIR O ÍCONE DA JANELA ---
         try:
-            # Garante que o nome do seu ícone seja exatamente 'icone.ico'
             self.iconbitmap(resource_path("icone.ico"))
         except Exception as e:
             print(f"Aviso: Não foi possível carregar o ícone da janela: {e}")
 
-        self.dados_chaves = []
+        self.resultados_atuais = []
+        self.widgets_linhas = []
+        
         self.grid_columnconfigure(0, weight=1); self.grid_rowconfigure(1, weight=1); self.grid_rowconfigure(3, weight=0)
         
-        # (O resto do __init__ permanece o mesmo)
         self.frame_botoes = ctk.CTkFrame(self); self.frame_botoes.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
         self.botao_carregar_arquivo = ctk.CTkButton(self.frame_botoes, text="Carregar Arquivo", command=self.iniciar_extracao_arquivo); self.botao_carregar_arquivo.pack(side="left", padx=5, pady=5)
         self.botao_carregar_pasta = ctk.CTkButton(self.frame_botoes, text="Carregar Pasta", command=self.iniciar_extracao_pasta); self.botao_carregar_pasta.pack(side="left", padx=5, pady=5)
+        self.botao_limpar = ctk.CTkButton(self.frame_botoes, text="Limpar Painel", command=self.limpar_tudo, fg_color="#585858", hover_color="#404040"); self.botao_limpar.pack(side="left", padx=5, pady=5)
+
         self.frame_rolavel = ctk.CTkScrollableFrame(self, label_text="Chaves Extraídas"); self.frame_rolavel.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
-        self.botao_adicionar = ctk.CTkButton(self, text="Adicionar Chave Manualmente", command=lambda: self.adicionar_linha_chave()); self.botao_adicionar.grid(row=2, column=0, padx=10, pady=(10,5), sticky="ew")
+        self.botao_adicionar = ctk.CTkButton(self, text="Adicionar Chave Manualmente", command=self.handle_adicionar_manual); self.botao_adicionar.grid(row=2, column=0, padx=10, pady=(10,5), sticky="ew")
         self.frame_analise = ctk.CTkFrame(self, height=150); self.frame_analise.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
         self.frame_analise.grid_propagate(False); self.frame_analise.grid_columnconfigure(0, weight=1); self.frame_analise.grid_rowconfigure(0, weight=1)
         self.textbox_analise = ctk.CTkTextbox(self.frame_analise, wrap="word", state="disabled", font=("Consolas", 12)); self.textbox_analise.grid(row=0, column=0, sticky="nsew")
@@ -117,13 +108,13 @@ class App(ctk.CTk):
         self.botao_carregar_arquivo.configure(state=estado); self.botao_carregar_pasta.configure(state=estado)
         self.botao_adicionar_excel.configure(state=estado); self.botao_substituir_excel.configure(state=estado)
         self.botao_adicionar.configure(state=estado)
+        self.botao_limpar.configure(state=estado)
         
     def iniciar_extracao_base(self, target_func, target_arg):
         if not target_arg: self.label_status.configure(text="Operação cancelada."); return
-        self.label_status.configure(text=f"Processando '{os.path.basename(target_arg)}'...")
+        self.label_status.configure(text=f"Processando '{os.path.basename(str(target_arg))}'...")
         self.progressbar.grid(row=0, column=1, padx=10, sticky="ew"); self.progressbar.set(0)
         self._bloquear_botoes(True)
-        self.atualizar_painel([])
         self.textbox_analise.configure(state="normal"); self.textbox_analise.delete("1.0", "end"); self.textbox_analise.configure(state="disabled")
         threading.Thread(target=target_func, args=(target_arg,), daemon=True).start()
 
@@ -137,9 +128,9 @@ class App(ctk.CTk):
         
     def _processar_arquivo_em_background(self, caminho_arquivo):
         self.progressbar.set(0.5)
-        resultados = extrair_e_analisar_imagem(caminho_arquivo)
+        novos_resultados = extrair_e_analisar_imagem(caminho_arquivo)
         self.progressbar.set(1.0)
-        self.after(0, self.atualizar_interface_completa, resultados, [caminho_arquivo])
+        self.after(0, self.atualizar_interface_completa, novos_resultados, [caminho_arquivo])
         
     def _processar_pasta_em_background(self, caminho_pasta):
         imagens = [f for f in os.listdir(caminho_pasta) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
@@ -153,30 +144,36 @@ class App(ctk.CTk):
             self.progressbar.set((i + 1) / total_imagens)
         self.after(0, self.atualizar_interface_completa, resultados_finais, imagens)
 
-    def atualizar_interface_completa(self, resultados, imagens_processadas):
-        self.atualizar_painel(resultados)
-        self.exibir_relatorio_de_revisao(resultados, imagens_processadas)
-        self.label_status.configure(text=f"{len(resultados)} chaves carregadas. Prontas para revisão.")
+    def atualizar_interface_completa(self, novos_resultados, imagens_processadas):
+        self._sincronizar_painel_com_dados()
+        self.resultados_atuais.extend(novos_resultados)
+        self._redesenhar_painel_completo()
+        self.exibir_relatorio_de_revisao(self.resultados_atuais, imagens_processadas)
+        self.label_status.configure(text=f"{len(self.resultados_atuais)} chaves carregadas. Prontas para revisão.")
         self.progressbar.grid_forget()
         self._bloquear_botoes(False)
 
-    def atualizar_painel(self, resultados):
-        for widget_info in self.dados_chaves:
+    def _sincronizar_painel_com_dados(self):
+        """Salva os valores atuais dos campos de entrada da UI na lista de dados 'self.resultados_atuais'."""
+        for widget_info in self.widgets_linhas:
+            idx = widget_info['index']
+            if idx < len(self.resultados_atuais):
+                valor_atual_entry = widget_info['entry'].get()
+                self.resultados_atuais[idx]['Chave'] = valor_atual_entry
+
+    def _redesenhar_painel_completo(self):
+        """Limpa e redesenha todo o painel de chaves a partir da lista de dados."""
+        for widget_info in self.widgets_linhas:
             widget_info['frame'].destroy()
-        self.dados_chaves.clear()
-        for resultado in resultados:
-            self.adicionar_linha_chave(
-                imagem=resultado['Imagem'], 
-                chave=resultado['Chave'], 
-                diagnostico=resultado['Diagnostico']
-            )
+        self.widgets_linhas.clear()
+        
+        for i, resultado in enumerate(self.resultados_atuais):
+            self._desenhar_linha_chave(i, resultado)
 
     def exibir_relatorio_de_revisao(self, resultados, imagens_processadas):
-        chaves_para_revisao = [res for res in resultados if res['Diagnostico'].lower() != 'nenhum']
-        
+        chaves_para_revisao = [res for res in resultados if res.get('Diagnostico', '').lower() not in ['nenhum', 'não informado', '']]
         relatorio = f"--- DIAGNÓSTICO DA IA ---\n"
-        relatorio += f"Imagens Processadas: {len(imagens_processadas)} | Total de Chaves Encontradas: {len(resultados)}\n\n"
-        
+        relatorio += f"Imagens Processadas nesta Rodada: {len(imagens_processadas)} | Total de Chaves no Painel: {len(resultados)}\n\n"
         if chaves_para_revisao:
             relatorio += f"🚨 {len(chaves_para_revisao)} CHAVE(S) MARCADAS PELA IA PARA REVISÃO MANUAL:\n"
             for item in chaves_para_revisao:
@@ -190,33 +187,91 @@ class App(ctk.CTk):
         self.textbox_analise.insert("1.0", relatorio)
         self.textbox_analise.configure(state="disabled")
 
-    def adicionar_linha_chave(self, imagem="MANUAL", chave="", diagnostico=None):
+    def _desenhar_linha_chave(self, index, dados_linha):
+        """Apenas desenha uma linha na interface com base nos dados fornecidos."""
+        imagem = dados_linha.get('Imagem', 'MANUAL')
+        chave = dados_linha.get('Chave', '')
+        diagnostico = dados_linha.get('Diagnostico')
+
         frame_linha = ctk.CTkFrame(self.frame_rolavel); frame_linha.pack(fill="x", expand=True, padx=5, pady=2)
         
-        if diagnostico is None or diagnostico.lower() == "não informado":
-            cor_diagnostico = "gray"
-            texto_diagnostico = "N/A"
-        elif diagnostico.lower() == 'nenhum':
-            cor_diagnostico = "light green"
-            texto_diagnostico = "✅ Alta Confiança"
-        else:
-            cor_diagnostico = "orange"
-            texto_diagnostico = f"⚠️ Revisar: {diagnostico}"
+        # MUDANÇA: Adiciona um número de linha fixo para visualização
+        label_numero_linha = ctk.CTkLabel(frame_linha, text=f"{index + 1}.", width=30, text_color="gray"); 
+        label_numero_linha.pack(side="left", padx=(5, 0))
 
-        label_imagem = ctk.CTkLabel(frame_linha, text=imagem, width=150); label_imagem.pack(side="left", padx=5)
-        entry_chave = ctk.CTkEntry(frame_linha, width=350); entry_chave.insert(0, chave); entry_chave.pack(side="left", fill="x", expand=True, padx=5)
-        label_diagnostico = ctk.CTkLabel(frame_linha, text=texto_diagnostico, text_color=cor_diagnostico, font=("Arial", 11, "bold"), width=150); label_diagnostico.pack(side="left", padx=5)
-        botao_excluir = ctk.CTkButton(frame_linha, text="Excluir", width=80, fg_color="firebrick", hover_color="darkred", command=lambda f=frame_linha: self.excluir_linha_chave(f)); botao_excluir.pack(side="left", padx=5)
-        self.dados_chaves.append({'frame': frame_linha, 'label': label_imagem, 'entry': entry_chave})
-    
-    def excluir_linha_chave(self, frame_a_excluir):
-        for i, widget_info in enumerate(self.dados_chaves):
-            if widget_info['frame'] == frame_a_excluir: self.dados_chaves.pop(i); break
-        frame_a_excluir.destroy()
+        cor_diagnostico, texto_diagnostico = "gray", "N/A"
+        if diagnostico:
+            if diagnostico.lower() == 'nenhum':
+                cor_diagnostico, texto_diagnostico = "light green", "✅ Alta Confiança"
+            elif diagnostico.lower() != 'não informado':
+                cor_diagnostico, texto_diagnostico = "orange", f"⚠️ Revisar: {diagnostico}"
+
+        label_imagem = ctk.CTkLabel(frame_linha, text=imagem, width=120, anchor="w"); label_imagem.pack(side="left", padx=5)
+        
+        string_var = StringVar()
+        string_var.set(chave)
+        def to_upper(*args):
+            string_var.set(string_var.get().upper())
+        string_var.trace("w", to_upper)
+        entry_chave = ctk.CTkEntry(frame_linha, textvariable=string_var); entry_chave.pack(side="left", fill="x", expand=True, padx=5)
+        
+        label_diagnostico = ctk.CTkLabel(frame_linha, text=texto_diagnostico, text_color=cor_diagnostico, width=150); label_diagnostico.pack(side="left", padx=5)
+        
+        frame_acoes = ctk.CTkFrame(frame_linha, fg_color="transparent"); frame_acoes.pack(side="left", padx=5)
+        
+        botao_subir = ctk.CTkButton(frame_acoes, text="↑", width=30, command=lambda idx=index: self.mover_linha(idx, -1)); botao_subir.pack(side="left", padx=(0,2))
+        botao_descer = ctk.CTkButton(frame_acoes, text="↓", width=30, command=lambda idx=index: self.mover_linha(idx, 1)); botao_descer.pack(side="left", padx=(0,5))
+        botao_excluir = ctk.CTkButton(frame_acoes, text="Excluir", width=60, fg_color="firebrick", hover_color="darkred", command=lambda idx=index: self.excluir_linha_chave(idx)); botao_excluir.pack(side="left")
+        
+        self.widgets_linhas.append({'frame': frame_linha, 'label': label_imagem, 'entry': entry_chave, 'index': index})
+
+    def handle_adicionar_manual(self):
+        """Sincroniza os dados, adiciona uma nova entrada e redesenha a interface."""
+        self._sincronizar_painel_com_dados()
+        self.resultados_atuais.append({'Imagem': 'MANUAL', 'Chave': '', 'Diagnostico': 'Não informado'})
+        self._redesenhar_painel_completo()
+
+    def mover_linha(self, index_atual, direcao):
+        """Sincroniza os dados, move um item na lista e redesenha a interface."""
+        self._sincronizar_painel_com_dados()
+        novo_index = index_atual + direcao
+        if 0 <= novo_index < len(self.resultados_atuais):
+            self.resultados_atuais[index_atual], self.resultados_atuais[novo_index] = self.resultados_atuais[novo_index], self.resultados_atuais[index_atual]
+            self._redesenhar_painel_completo()
+
+    def excluir_linha_chave(self, index_para_remover):
+        """Sincroniza os dados, remove um item da lista e redesenha a interface."""
+        self._sincronizar_painel_com_dados()
+        if 0 <= index_para_remover < len(self.resultados_atuais):
+            self.resultados_atuais.pop(index_para_remover)
+            self._redesenhar_painel_completo()
+            
+    def limpar_tudo(self):
+        self.resultados_atuais.clear()
+        self._redesenhar_painel_completo()
+        self.textbox_analise.configure(state="normal")
+        self.textbox_analise.delete("1.0", "end")
+        self.textbox_analise.configure(state="disabled")
+        self.label_status.configure(text="Painel limpo. Pronto para começar.")
+
     def _coletar_dados_do_painel(self):
-        if not self.dados_chaves: messagebox.showwarning("Aviso", "Não há chaves no painel para salvar."); return None
-        dados_revisados = [{'Imagem': w['label'].cget("text"), 'Chave': w['entry'].get()} for w in self.dados_chaves]
-        return pd.DataFrame(dados_revisados)
+        """Coleta e VALIDA os dados da lista 'self.resultados_atuais' para salvar."""
+        self._sincronizar_painel_com_dados() 
+        
+        if not self.resultados_atuais:
+            messagebox.showwarning("Aviso", "Não há chaves no painel para salvar.")
+            return None
+        
+        for i, r in enumerate(self.resultados_atuais):
+            if not r['Chave'].strip():
+                messagebox.showerror("Erro de Validação", 
+                                     f"A chave na linha {i+1} está vazia.\n\n"
+                                     "Por favor, preencha todas as chaves ou exclua as linhas em branco antes de salvar.")
+                return None
+            
+        dados_para_salvar = [{'Imagem': r['Imagem'], 'Chave': r['Chave']} for r in self.resultados_atuais]
+        return pd.DataFrame(dados_para_salvar)
+
     def substituir_em_excel(self):
         df_novo = self._coletar_dados_do_painel();
         if df_novo is None: return
@@ -227,6 +282,7 @@ class App(ctk.CTk):
             if os.path.exists(caminho_arquivo_final): os.startfile(caminho_arquivo_final)
         except Exception as e:
             messagebox.showerror("Erro", f"Ocorreu um erro ao salvar o arquivo:\n{e}")
+
     def adicionar_ao_excel(self):
         df_novo = self._coletar_dados_do_painel()
         if df_novo is None: return
@@ -235,7 +291,7 @@ class App(ctk.CTk):
             if os.path.exists(caminho_arquivo_final):
                 df_antigo = pd.read_excel(caminho_arquivo_final)
                 df_final = pd.concat([df_antigo, df_novo], ignore_index=True)
-                df_final.drop_duplicates(subset=['Chave'], keep='first', inplace=True)
+                df_final.drop_duplicates(subset=['Chave'], keep='last', inplace=True)
             else:
                 df_final = df_novo
             df_final.to_excel(caminho_arquivo_final, index=False)

@@ -21,4 +21,3 @@ pyinstaller --name="SysKey" --windowed --icon="icone.ico" extrair_chaves.py
 PATH para criar:
 C:\Users\Felipe\AppData\Local\Programs\Python\Python313\Scripts
 C:\Users\Felipe\AppData\Local\Programs\Python\Python313\
-    
