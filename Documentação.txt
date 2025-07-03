@@ -6,7 +6,7 @@ SysKey é um aplicativo de desktop desenvolvido em Python com a biblioteca Custo
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 - **Extração por OCR:** Usa a IA Generativa do Google (Gemini) para ler chaves de produto de arquivos de imagem (`.jpg`, `.png`, etc.).
 - **Carregamento em Massa:** Processa múltiplos arquivos de imagem de uma só vez ao selecionar uma pasta.
@@ -26,7 +26,7 @@ SysKey é um aplicativo de desktop desenvolvido em Python com a biblioteca Custo
 
 ---
 
-## 🚀 Como Usar o Aplicativo
+##  Como Usar o Aplicativo
 
 1.  **Carregar Chaves:**
     - Clique em **"Carregar Arquivo"** para selecionar uma única imagem.
@@ -46,7 +46,7 @@ SysKey é um aplicativo de desktop desenvolvido em Python com a biblioteca Custo
 
 ---
 
-## 🛠️ Configuração do Ambiente (Para Desenvolvedores)
+##  Configuração do Ambiente (Para Desenvolvedores)
 
 Para executar o projeto a partir do código-fonte, siga estes passos:
 
@@ -77,7 +77,7 @@ Para executar o projeto a partir do código-fonte, siga estes passos:
 
 ---
 
-## 🏗️ Estrutura do Código
+##  Estrutura do Código
 
 O código é organizado em uma única classe principal (`App`) e algumas funções auxiliares.
 
