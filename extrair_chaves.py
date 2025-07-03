@@ -9,13 +9,13 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import re
 
-# --- CONFIGURAÇÃO INICIAL E CONSTANTES ---
+
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 NOME_ARQUIVO_EXCEL = 'chaves_extraidas_final.xlsx'
 
 
-# --- FUNÇÃO AUXILIAR PARA ENCONTRAR ARQUIVOS NO APP (PyInstaller) ---
+
 def resource_path(relative_path):
     """ Retorna o caminho absoluto para o recurso, funciona para desenvolvimento e para o executável do PyInstaller """
     try:
@@ -24,13 +24,13 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# --- FUNÇÃO DE VALIDAÇÃO DE FORMATO ---
+
 def validar_formato_chave(chave: str) -> bool:
     """Verifica se a chave segue o padrão XXXXX-XXXXX-XXXXX-XXXXX-XXXXX."""
     padrao = re.compile(r'^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$')
     return bool(padrao.match(chave))
 
-# --- LÓGICA DE EXTRAÇÃO (MOTOR DO PROGRAMA) ---
+
 def extrair_chaves_da_imagem(caminho_imagem: str) -> list:
     """Usa um prompt simplificado para extrair apenas as chaves da imagem."""
     nome_arquivo = os.path.basename(caminho_imagem)
@@ -66,13 +66,13 @@ def extrair_chaves_da_imagem(caminho_imagem: str) -> list:
         print(f"    ❌ Erro na chamada da API Gemini para '{nome_arquivo}': {e}")
         return []
 
-# --- APLICAÇÃO COM INTERFACE GRÁFICA (PAINEL) ---
+
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        # --- CONFIGURAÇÃO DA JANELA PRINCIPAL ---
+        
         self.title("SysKey - Painel de Extração de Chaves")
         self.geometry("1100x700")
         ctk.set_appearance_mode("dark")
@@ -82,18 +82,18 @@ class App(ctk.CTk):
         except Exception as e:
             print(f"Aviso: Não foi possível carregar o ícone da janela: {e}")
 
-        # --- DADOS E FONTES ---
+        
         self.resultados_atuais = []
         self.widgets_linhas = []
         self.title_font = ctk.CTkFont(family="Arial", size=18, weight="bold")
         self.main_font = ctk.CTkFont(family="Arial", size=12)
         self.status_font = ctk.CTkFont(family="Arial", size=11)
 
-        # --- ESTRUTURA DE LAYOUT PRINCIPAL ---
+        
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
-        # Frame Superior (Botões de Ação)
+        
         self.frame_superior = ctk.CTkFrame(self, corner_radius=0)
         self.frame_superior.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="ew")
         self.frame_superior.grid_columnconfigure(3, weight=1) 
@@ -105,11 +105,11 @@ class App(ctk.CTk):
         self.botao_limpar = ctk.CTkButton(self.frame_superior, text="Limpar Painel", command=self.limpar_tudo, fg_color="#585858", hover_color="#404040")
         self.botao_limpar.grid(row=0, column=4, padx=5, pady=5)
 
-        # Frame Central (Lista de Chaves)
+        
         self.frame_rolavel = ctk.CTkScrollableFrame(self, label_text="Chaves Extraídas", label_font=self.title_font)
         self.frame_rolavel.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
 
-        # Frame Inferior (Relatório e Ações Finais)
+        
         self.frame_inferior = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.frame_inferior.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
         self.frame_inferior.grid_columnconfigure(0, weight=1)
@@ -337,7 +337,7 @@ class App(ctk.CTk):
         if df_novo is None: return
         caminho_arquivo_final = os.path.join(os.getcwd(), NOME_ARQUIVO_EXCEL)
         try:
-            # MUDANÇA: Adicionado header=False para não salvar o cabeçalho
+            
             df_novo.to_excel(caminho_arquivo_final, index=False, header=False)
             messagebox.showinfo("Sucesso", f"As chaves foram salvas, substituindo o arquivo anterior!\n\nO arquivo será aberto a seguir.")
             if os.path.exists(caminho_arquivo_final): os.startfile(caminho_arquivo_final)
@@ -350,13 +350,13 @@ class App(ctk.CTk):
         caminho_arquivo_final = os.path.join(os.getcwd(), NOME_ARQUIVO_EXCEL)
         try:
             if os.path.exists(caminho_arquivo_final):
-                # MUDANÇA: Adicionado header=None e names para ler corretamente um arquivo sem cabeçalho
+                
                 df_antigo = pd.read_excel(caminho_arquivo_final, header=None, names=['Imagem', 'Chave'])
                 df_final = pd.concat([df_antigo, df_novo], ignore_index=True)
                 df_final.drop_duplicates(subset=['Chave'], keep='last', inplace=True)
             else:
                 df_final = df_novo
-            # MUDANÇA: Adicionado header=False para não salvar o cabeçalho
+            
             df_final.to_excel(caminho_arquivo_final, index=False, header=False)
             messagebox.showinfo("Sucesso", f"As chaves foram adicionadas à planilha!\n\nO arquivo será aberto a seguir.")
             if os.path.exists(caminho_arquivo_final): os.startfile(caminho_arquivo_final)
