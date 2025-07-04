@@ -1,0 +1,100 @@
+# Documento de Apresentação do Projeto: SysKey
+## Painel Inteligente de Extração e Gerenciamento de Chaves de Produto
+
+---
+
+### 1. Resumo Executivo
+
+O **SysKey** é uma aplicação de desktop desenvolvida para resolver um desafio comum e crítico em departamentos de TI: a transcrição e o gerenciamento de chaves de produto de software (Product Keys). 
+Através de uma interface intuitiva e da integração com a Inteligência Artificial do Google, o SysKey automatiza a extração de chaves a partir de imagens, valida sua estrutura e centraliza os dados em uma planilha organizada, 
+mitigando erros humanos e otimizando drasticamente o tempo da equipe.
+
+---
+
+### 2. O Problema: Desafios no Gerenciamento Manual de Chaves
+
+O processo tradicional de lidar com chaves de produto, especialmente as que vêm em etiquetas físicas, apresenta várias dificuldades:
+
+* **Transcrição Manual Lenta:** Digitar manualmente sequências longas e complexas de caracteres é um processo demorado e propenso à interrupção.
+* **Alto Risco de Erro Humano:** A semelhança entre caracteres como 'O' e '0', 'B' e '8', 'G' e '6' leva a erros de digitação frequentes, que só são descobertos no momento da ativação do software, gerando retrabalho e frustração.
+* **Falta de Validação Imediata:** Não há uma forma rápida de saber se a chave digitada possui o formato correto.
+* **Gerenciamento Descentralizado:** As chaves acabam salvas em blocos de notas, e-mails ou planilhas desorganizadas, dificultando o controle de quais chaves já foram utilizadas e onde.
+
+Esses desafios resultam em perda de tempo produtivo da equipe, custos associados a erros de ativação e falhas na gestão de ativos de software.
+
+---
+
+### 3. A Solução: Apresentando o SysKey
+
+O SysKey foi criado para eliminar todos os problemas mencionados acima. Ele é um aplicativo de desktop inteligente que atua como um assistente para a equipe de TI, com três pilares de funcionamento:
+
+1.  **Automatizar:** Utiliza a poderosa tecnologia de **Inteligência Artificial do Google (Gemini)** para funcionar como "olhos" digitais que leem o texto diretamente de imagens, extraindo as chaves de produto de forma automática.
+2.  **Validar:** Implementa um sistema de verificação em tempo real para garantir que cada chave extraída ou digitada siga o **formato padrão** de uma chave de produto, alertando o usuário sobre qualquer anomalia.
+3.  **Centralizar:** Permite que o usuário refine, edite e organize a lista de chaves extraídas para, ao final, exportá-las para uma **planilha Excel limpa e organizada**, que se torna a fonte central e confiável de informações.
+
+---
+
+### 4. Guia Visual da Interface: O que Cada Elemento Faz?
+
+A interface do SysKey foi projetada para ser simples e direta. Vamos detalhar cada componente:
+
+#### A. Área de Ações Principais (Topo)
+* **`Carregar Arquivo`**: Abre uma janela para selecionar **uma única imagem** (`.jpg`, `.png`). O SysKey irá ler e extrair as chaves apenas deste arquivo.
+* **`Carregar Pasta`**: Abre uma janela para selecionar **uma pasta inteira**. O SysKey irá processar todas as imagens dentro daquela pasta de uma só vez, ideal para grandes lotes.
+* **`Limpar Painel`**: Apaga todas as chaves listadas no painel, permitindo iniciar uma nova sessão de extração do zero.
+
+#### B. Painel Central de Chaves (Lista Principal)
+Esta é a área de trabalho principal. Cada linha representa uma chave e é composta por:
+1.  **Nº da Linha**: Um número fixo para fácil referência visual.
+2.  **Imagem**: O nome do arquivo de origem da chave. Se for adicionada manualmente, aparecerá "MANUAL".
+3.  **Campo da Chave**: O campo de texto onde a chave é exibida. **É totalmente editável**. Qualquer digitação aqui é automaticamente convertida para maiúsculas.
+4.  **Status de Validação**: Um feedback visual instantâneo:
+    * **`✅ Padrão Correto` (Verde)**: A chave tem o formato correto (ex: `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`).
+    * **`⚠️ Verificar Formato` (Laranja)**: A chave não segue o formato padrão.
+5.  **Ações da Linha**:
+    * **`↑` e `↓`**: Botões para mover a linha para cima ou para baixo, permitindo organizar a lista antes de salvar.
+    * **`Excluir`**: Remove permanentemente a linha da lista.
+
+#### C. Painel Inferior: Análise e Ações Finais
+* **`Adicionar Chave Manualmente`**: Cria uma nova linha em branco no final da lista para digitação manual de uma chave.
+* **Relatório de Validação (Caixa de Texto à Esquerda)**: Este painel é um **assistente dinâmico**. Ele lista automaticamente todas as chaves que estão com o formato inválido e informa o número da linha para que você possa encontrá-las e corrigi-las facilmente. Assim que você corrige uma chave, ela desaparece deste relatório.
+* **Status e Botões de Salvamento (Direita)**:
+    * **Barra de Status**: Informa o que o aplicativo está fazendo ou o total de chaves carregadas.
+    * **`Adicionar ao Excel`**: Pega todas as chaves do painel e as **adiciona ao final** do arquivo `chaves_extraidas_final.xlsx`. Se uma chave já existir na planilha, ela não será adicionada novamente, evitando duplicatas.
+    * **`Substituir a Planilha`**: Pega todas as chaves do painel e **cria um novo arquivo** `chaves_extraidas_final.xlsx`, apagando qualquer versão anterior.
+
+---
+
+### 5. Fluxo de Trabalho Recomendado (Passo a Passo da Demonstração)
+
+1.  **Iniciar a Extração**: Clique em `Carregar Pasta` para processar um lote de imagens. Observe a barra de progresso e o status mudando.
+2.  **Revisar e Corrigir**: Com as chaves no painel, identifique visualmente as que estão marcadas com `⚠️ Verificar Formato`. Navegue até a linha indicada no Relatório de Validação.
+3.  **Editar em Tempo Real**: Edite uma chave inválida. Observe como o status muda instantaneamente para `✅ Padrão Correto` e a chave some da lista do relatório.
+4.  **Organizar**: Use os botões `↑` e `↓` para mover uma chave de lugar. Adicione uma chave manualmente clicando no botão correspondente.
+5.  **Exportar para Excel**: Após todas as chaves estarem com o status verde, clique em `Substituir a Planilha` ou `Adicionar ao Excel`. O programa validará uma última vez se há campos vazios e, se tudo estiver correto, salvará e abrirá a planilha.
+
+---
+
+### 6. Benefícios para a Empresa
+
+-   **Redução Drástica de Erros:** A validação automática de formato elimina quase que por completo os erros de digitação, garantindo maior taxa de sucesso na ativação de softwares.
+-   **Aumento de Produtividade:** Automatiza uma tarefa repetitiva e demorada, liberando horas de trabalho da equipe de TI para se concentrarem em atividades mais estratégicas.
+-   **Centralização e Auditoria:** O arquivo Excel gerado torna-se um inventário central, limpo e confiável de chaves de produto, facilitando o gerenciamento e a auditoria de licenças de software.
+-   **Facilidade de Uso:** A interface intuitiva permite que qualquer membro da equipe, independentemente do nível técnico, possa utilizar a ferramenta com treinamento mínimo.
+
+---
+
+### 7. Detalhes Técnicos
+
+-   **Linguagem de Programação:** Python 3.
+-   **Interface Gráfica:** Framework CustomTkinter (uma variação moderna da biblioteca padrão Tkinter).
+-   **Motor de OCR:** API Google Gemini 1.5 Flash (Inteligência Artificial na nuvem).
+-   **Manipulação de Dados e Excel:** Biblioteca Pandas, padrão da indústria para análise e manipulação de dados em Python.
+-   **Distribuição:** O código pode ser compilado em um único arquivo executável (`.exe`) usando PyInstaller, não exigindo que o Python seja instalado na máquina do usuário final.
+
+---
+
+### 8. Conclusão
+
+O **SysKey** é mais do que uma ferramenta; é uma modernização de um processo essencial. Ele troca o trabalho manual e suscetível a erros por um fluxo de trabalho automatizado, 
+validado e eficiente, representando um ganho direto em produtividade e confiabilidade para a equipe de TI (produção).
