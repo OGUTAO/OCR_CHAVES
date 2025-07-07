@@ -1,4 +1,6 @@
 # OCR_CHAVES
+python da versão mais atualizada instalado na maquina
+
 Bibliotecas:
 python -m pip install --upgrade pyinstaller customtkinter pandas openpyxl python-dotenv requests
 pip install opencv-python numpy
