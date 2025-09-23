@@ -20,3 +20,5 @@ Criar App Sem Bibliotecas:
 where python
 python -m pip install --upgrade pyinstaller customtkinter pandas openpyxl python-dotenv requests
 pyinstaller --name="SysKey" --windowed --icon="icone.ico" extrair_chaves.py
+
+<img width="1919" height="1019" alt="image" src="https://github.com/user-attachments/assets/079a5f8f-78c6-4704-9d2a-60d1c77d3393" />
