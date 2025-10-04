@@ -1,4 +1,6 @@
 # OCR_CHAVES
+python da versão mais atualizada instalado na maquina
+
 Bibliotecas:
 python -m pip install --upgrade pyinstaller customtkinter pandas openpyxl python-dotenv requests
 pip install opencv-python numpy
@@ -19,6 +21,4 @@ where python
 python -m pip install --upgrade pyinstaller customtkinter pandas openpyxl python-dotenv requests
 pyinstaller --name="SysKey" --windowed --icon="icone.ico" extrair_chaves.py
 
-PATH para criar:
-C:\Users\Felipe\AppData\Local\Programs\Python\Python313\Scripts
-C:\Users\Felipe\AppData\Local\Programs\Python\Python313\
+<img width="1919" height="1019" alt="image" src="https://github.com/user-attachments/assets/079a5f8f-78c6-4704-9d2a-60d1c77d3393" />
