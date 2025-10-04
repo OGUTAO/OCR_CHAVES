@@ -34,23 +34,36 @@ def validar_formato_chave(chave: str) -> bool:
 def extrair_chaves_da_imagem(caminho_imagem: str) -> list:
     """Usa um prompt simplificado para extrair apenas as chaves da imagem."""
     nome_arquivo = os.path.basename(caminho_imagem)
-    print(f"\n🖼️  Extraindo chaves de '{nome_arquivo}'...")
+    print(f"\nExtraindo chaves de '{nome_arquivo}'...")
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         img = Image.open(caminho_imagem)
         
         prompt = """
-        Sua tarefa é transcrever TODAS as chaves de produto da imagem com a maior precisão possível.
-        Liste cada chave encontrada em uma nova linha, começando com "CHAVE: ".
-        
-        Exemplo:
-        CHAVE: GR79F-V4NGQ-RBGQK-X4RVV-PWF9C
+        Sua tarefa é atuar como um especialista em OCR para transcrever chaves de produto do Windows a partir da imagem com a máxima precisão.
+
+        REGRAS E DIRETRIZES IMPORTANTES:
+        1.  **Formato Exato:** A chave DEVE seguir o formato `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`. São 5 blocos de 5 caracteres alfanuméricos cada.
+        2.  **Caracteres Válidos:** Chaves de produto do Windows usam apenas letras maiúsculas e números. Elas NUNCA contêm as seguintes letras: A, E, I, O, U, L, S, Z. Elas NUNCA contêm os seguintes números: 0, 1, 5.
+        3.  **Correção de Ambiguidade:** Preste atenção extra a caracteres que são visualmente semelhantes. Siga estas regras de substituição:
+            - Se vir um 'O', transcreva como 'Q'.
+            - Se vir um '0', transcreva como 'D' ou 'Q'.
+            - Se vir um '8', transcreva como 'B'.
+            - Se vir um '1', transcreva como 'T' ou 'J'.
+            - Se vir um '5', transcreva como 'G'.
+            - Se vir um 'S', transcreva como 'G'.
+            - Se vir um 'Z', transcreva como '2'.
+            - Se vir um 'I', transcreva como 'T' ou 'J'.
+        4.  **Saída Limpa:** Liste cada chave encontrada numa nova linha, começando com "CHAVE: ". Não inclua nenhum outro texto ou comentário.
+
+        Exemplo de saída esperada:
         CHAVE: NCKM6-93VT7-D64WF-2X9VK-MG9TT
+        CHAVE: GR79F-V4NGQ-RBGQK-X4RVV-PWF9C
         """
         
         response = model.generate_content([prompt, img])
-        print(f"    ✅ Texto recebido com sucesso.")
+        print(f"Texto recebido com sucesso.")
 
         if not response.text: return []
         
@@ -63,7 +76,7 @@ def extrair_chaves_da_imagem(caminho_imagem: str) -> list:
         return resultados
 
     except Exception as e:
-        print(f"    ❌ Erro na chamada da API Gemini para '{nome_arquivo}': {e}")
+        print(f"Erro na chamada da API Gemini para '{nome_arquivo}': {e}")
         return []
 
 
